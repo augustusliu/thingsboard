@@ -49,3 +49,8 @@ application-local.yml
 
 /*/.iml
 /*/*/.iml
+
+.DS_Store
+/*/.DS_Store
+/*/*/.DS_Store
+/*/*/*/.DS_Store
