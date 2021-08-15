@@ -41,8 +41,10 @@ application-local.yml
 /.gradle/
 /*/.gradle/
 /*/*/.gradle/
+/**/.gradle/
 */.gradle/
 */*/.gradle/
+**/.gradle/
 
 /ui-ngx/target
 /ui-ngx/node_modules
