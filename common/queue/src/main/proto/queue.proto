@@ -1,0 +1,601 @@
+syntax = "proto3";
+package transport;
+
+option java_package = "org.thingsboard.server.gen.transport";
+option java_outer_classname = "TransportProtos";
+
+// 消息对列数据结构
+message QueueInfo {
+  string name = 1;
+  string topic = 2;
+  int32 partitions = 3;
+}
+
+/**
+ * Service Discovery Data Structures;
+ */
+message ServiceInfo {
+  string serviceId = 1;
+  repeated string serviceTypes = 2;
+  int64 tenantIdMSB = 3;
+  int64 tenantIdLSB = 4;
+  repeated QueueInfo ruleEngineQueues = 5;
+}
+
+/**
+ * Transport Service Data Structures;
+ * 传输层中使用的session数据结构
+ */
+message SessionInfoProto {
+  // 节点id
+  string nodeId = 1;
+  // sessionid
+  int64 sessionIdMSB = 2;
+  int64 sessionIdLSB = 3;
+  // 租户ID
+  int64 tenantIdMSB = 4;
+  int64 tenantIdLSB = 5;
+  // 设备id
+  int64 deviceIdMSB = 6;
+  int64 deviceIdLSB = 7;
+  // 设备名称
+  string deviceName = 8;
+  // 设备类型
+  string deviceType = 9;
+  // 网关sessionId
+  int64 gwSessionIdMSB = 10;
+  int64 gwSessionIdLSB = 11;
+  // 设备画像ID
+  int64 deviceProfileIdMSB = 12;
+  int64 deviceProfileIdLSB = 13;
+}
+
+/**
+ *  session事件
+ */
+enum SessionEvent {
+  OPEN = 0;
+  CLOSED = 1;
+}
+
+/**
+ * session 同步类型
+ */
+enum SessionType {
+  SYNC = 0;
+  ASYNC = 1;
+}
+
+/**
+ * 物模型中属性的类型
+ */
+enum KeyValueType {
+  BOOLEAN_V = 0;
+  LONG_V = 1;
+  DOUBLE_V = 2;
+  STRING_V = 3;
+  JSON_V = 4;
+}
+
+/**
+ * 权限类型
+ */
+enum CredentialsType {
+  ACCESS_TOKEN = 0;
+  X509_CERTIFICATE = 1;
+  MQTT_BASIC = 2;
+}
+
+message KeyValueProto {
+  string key = 1;
+  KeyValueType type = 2;
+  bool bool_v = 3;
+  int64 long_v = 4;
+  double double_v = 5;
+  string string_v = 6;
+  string json_v = 7;
+}
+
+/**
+ * 时序消息结构
+ */
+message TsKvProto {
+  int64 ts = 1;
+  KeyValueProto kv = 2;
+}
+
+/**
+ * 时序消息列表结构
+ */
+message TsKvListProto {
+  int64 ts = 1;
+  repeated KeyValueProto kv = 2;
+}
+
+/**
+ * 设备信息数据结构
+ */
+message DeviceInfoProto {
+  int64 tenantIdMSB = 1;
+  int64 tenantIdLSB = 2;
+  int64 deviceIdMSB = 3;
+  int64 deviceIdLSB = 4;
+  string deviceName = 5;
+  string deviceType = 6;
+  string additionalInfo = 7;
+  int64 deviceProfileIdMSB = 8;
+  int64 deviceProfileIdLSB = 9;
+}
+
+/**
+ * Transport Service Messages;
+ */
+message SessionEventMsg {
+  SessionType sessionType = 1;
+  SessionEvent event = 2;
+}
+
+/**
+ * 遥测数据结构
+ */
+message PostTelemetryMsg {
+  repeated TsKvListProto tsKvList = 1;
+}
+
+message PostAttributeMsg {
+  repeated KeyValueProto kv = 1;
+}
+
+// 查询设备属性对应的请求结构
+message GetAttributeRequestMsg {
+  // 请求的id
+  int32 requestId = 1;
+  // 设备私有属性
+  repeated string clientAttributeNames = 2;
+  // 设备共享属性
+  repeated string sharedAttributeNames = 3;
+}
+
+// 查询设备属性值对应的响应消息结构
+message GetAttributeResponseMsg {
+  // 请求id
+  int32 requestId = 1;
+  // 私有属性值
+  repeated TsKvProto clientAttributeList = 2;
+  // 共享属性值
+  repeated TsKvProto sharedAttributeList = 3;
+  string error = 5;
+}
+
+// 更新设备属性对应的消息事件
+message AttributeUpdateNotificationMsg {
+  repeated TsKvProto sharedUpdated = 1;
+  repeated string sharedDeleted = 2;
+}
+
+// 设备token的请求消息
+message ValidateDeviceTokenRequestMsg {
+  string token = 1;
+}
+
+message ValidateDeviceX509CertRequestMsg {
+  string hash = 1;
+}
+
+message ValidateBasicMqttCredRequestMsg {
+  string clientId = 1;
+  string userName = 2;
+  string password = 3;
+}
+
+// 设备认证后返回的响应数据结构
+message ValidateDeviceCredentialsResponseMsg {
+  DeviceInfoProto deviceInfo = 1;
+  string credentialsBody = 2;
+  bytes profileBody = 3;
+}
+
+// 创建网关设备
+message GetOrCreateDeviceFromGatewayRequestMsg {
+  int64 gatewayIdMSB = 1;
+  int64 gatewayIdLSB = 2;
+  string deviceName = 3;
+  string deviceType = 4;
+}
+
+message GetOrCreateDeviceFromGatewayResponseMsg {
+  DeviceInfoProto deviceInfo = 1;
+  bytes profileBody = 2;
+}
+
+// 获取一个实体的请求需要传递的参数数据结构
+message GetEntityProfileRequestMsg {
+  // 实体类型
+  string entityType = 1;
+  // 实体的id
+  int64 entityIdMSB = 2;
+  int64 entityIdLSB = 3;
+}
+
+message GetEntityProfileResponseMsg {
+  string entityType = 1;
+  bytes data = 2;
+  bytes apiState = 3;
+}
+
+message EntityUpdateMsg {
+  string entityType = 1;
+  bytes data = 2;
+}
+
+message EntityDeleteMsg {
+  string entityType = 1;
+  int64 entityIdMSB = 2;
+  int64 entityIdLSB = 3;
+}
+
+message SessionCloseNotificationProto {
+  string message = 1;
+}
+
+message SubscribeToAttributeUpdatesMsg {
+  bool unsubscribe = 1;
+}
+
+message SubscribeToRPCMsg {
+  bool unsubscribe = 1;
+}
+
+message ToDeviceRpcRequestMsg {
+  int32 requestId = 1;
+  string methodName = 2;
+  string params = 3;
+}
+
+message ToDeviceRpcResponseMsg {
+  int32 requestId = 1;
+  string payload = 2;
+}
+
+message ToServerRpcRequestMsg {
+  int32 requestId = 1;
+  string methodName = 2;
+  string params = 3;
+}
+
+message ToServerRpcResponseMsg {
+  int32 requestId = 1;
+  string payload = 2;
+  string error = 3;
+}
+
+message ClaimDeviceMsg {
+  int64 deviceIdMSB = 1;
+  int64 deviceIdLSB = 2;
+  string secretKey = 3;
+  int64 durationMs = 4;
+}
+
+message DeviceCredentialsProto {
+  int64 deviceIdMSB = 1;
+  int64 deviceIdLSB = 2;
+  CredentialsType credentialsType = 3;
+  string credentialsId = 4;
+  string credentialsValue = 5;
+}
+
+message CredentialsDataProto {
+  ValidateDeviceTokenRequestMsg validateDeviceTokenRequestMsg = 1;
+  ValidateDeviceX509CertRequestMsg validateDeviceX509CertRequestMsg = 2;
+  ValidateBasicMqttCredRequestMsg validateBasicMqttCredRequestMsg = 3;
+}
+
+// 提供设备请求:新增设备请求消息
+message ProvisionDeviceRequestMsg {
+  // 设备名称
+  string deviceName = 1;
+  // 设备的授权类型
+  CredentialsType credentialsType = 2;
+  // 设备授权秘钥，跟授权类型相关
+  ProvisionDeviceCredentialsMsg provisionDeviceCredentialsMsg = 3;
+  // 设备认证的数据
+  CredentialsDataProto credentialsDataProto = 4;
+}
+
+message ProvisionDeviceCredentialsMsg {
+  string provisionDeviceKey = 1;
+  string provisionDeviceSecret = 2;
+}
+
+message ProvisionDeviceResponseMsg {
+  ProvisionResponseStatus status = 1;
+  CredentialsType credentialsType = 2;
+  string credentialsValue = 3;
+}
+
+enum ProvisionResponseStatus {
+  UNKNOWN = 0;
+  SUCCESS = 1;
+  NOT_FOUND = 2;
+  FAILURE = 3;
+}
+//Used to report session state to tb-Service and persist this state in the cache on the tb-Service level.
+message SubscriptionInfoProto {
+  int64 lastActivityTime = 1;
+  bool attributeSubscription = 2;
+  bool rpcSubscription = 3;
+}
+
+message SessionSubscriptionInfoProto {
+  SessionInfoProto sessionInfo = 1;
+  SubscriptionInfoProto subscriptionInfo = 2;
+}
+
+message DeviceSessionsCacheEntry {
+  repeated SessionSubscriptionInfoProto sessions = 1;
+}
+
+message TransportToDeviceActorMsg {
+  SessionInfoProto sessionInfo = 1;
+  SessionEventMsg sessionEvent = 2;
+  GetAttributeRequestMsg getAttributes = 3;
+  SubscribeToAttributeUpdatesMsg subscribeToAttributes = 4;
+  SubscribeToRPCMsg subscribeToRPC = 5;
+  ToDeviceRpcResponseMsg toDeviceRPCCallResponse = 6;
+  SubscriptionInfoProto subscriptionInfo = 7;
+  ClaimDeviceMsg claimDevice = 8;
+  ProvisionDeviceRequestMsg provisionDevice = 9;
+}
+
+message TransportToRuleEngineMsg {
+  SessionInfoProto sessionInfo = 1;
+  PostTelemetryMsg postTelemetry = 2;
+  PostAttributeMsg postAttributes = 3;
+  ToDeviceRpcResponseMsg toDeviceRPCCallResponse = 4;
+  ToServerRpcRequestMsg toServerRPCCallRequest = 5;
+}
+
+/**
+ * TB Core Data Structures
+ */
+
+message TbSubscriptionProto {
+  string serviceId = 1;
+  string sessionId = 2;
+  int32 subscriptionId = 3;
+  string entityType = 4;
+  int64 tenantIdMSB = 5;
+  int64 tenantIdLSB = 6;
+  int64 entityIdMSB = 7;
+  int64 entityIdLSB = 8;
+}
+
+message TbTimeSeriesSubscriptionProto {
+  TbSubscriptionProto sub = 1;
+  bool allKeys = 2;
+  repeated TbSubscriptionKetStateProto keyStates = 3;
+  int64 startTime = 4;
+  int64 endTime = 5;
+}
+
+message TbAttributeSubscriptionProto {
+  TbSubscriptionProto sub = 1;
+  bool allKeys = 2;
+  repeated TbSubscriptionKetStateProto keyStates = 3;
+  string scope = 4;
+}
+
+message TbAlarmSubscriptionProto {
+  TbSubscriptionProto sub = 1;
+  int64 ts = 2;
+}
+
+message TbSubscriptionUpdateProto {
+  string sessionId = 1;
+  int32 subscriptionId = 2;
+  int32 errorCode = 3;
+  string errorMsg = 4;
+  repeated TbSubscriptionUpdateValueListProto data = 5;
+}
+
+message TbAlarmSubscriptionUpdateProto {
+  string sessionId = 1;
+  int32 subscriptionId = 2;
+  int32 errorCode = 3;
+  string errorMsg = 4;
+  string alarm = 5;
+  bool deleted = 6;
+}
+
+message TbAttributeUpdateProto {
+  string entityType = 1;
+  int64 entityIdMSB = 2;
+  int64 entityIdLSB = 3;
+  int64 tenantIdMSB = 4;
+  int64 tenantIdLSB = 5;
+  string scope = 6;
+  repeated TsKvProto data = 7;
+}
+
+message TbAlarmUpdateProto {
+  string entityType = 1;
+  int64 entityIdMSB = 2;
+  int64 entityIdLSB = 3;
+  int64 tenantIdMSB = 4;
+  int64 tenantIdLSB = 5;
+  string alarm = 6;
+}
+
+message TbAlarmDeleteProto {
+  string entityType = 1;
+  int64 entityIdMSB = 2;
+  int64 entityIdLSB = 3;
+  int64 tenantIdMSB = 4;
+  int64 tenantIdLSB = 5;
+  string alarm = 6;
+}
+
+message TbAttributeDeleteProto {
+  string entityType = 1;
+  int64 entityIdMSB = 2;
+  int64 entityIdLSB = 3;
+  int64 tenantIdMSB = 4;
+  int64 tenantIdLSB = 5;
+  string scope = 6;
+  repeated string keys = 7;
+}
+
+message TbTimeSeriesUpdateProto {
+  string entityType = 1;
+  int64 entityIdMSB = 2;
+  int64 entityIdLSB = 3;
+  int64 tenantIdMSB = 4;
+  int64 tenantIdLSB = 5;
+  repeated TsKvProto data = 6;
+}
+
+message TbSubscriptionCloseProto {
+  string sessionId = 1;
+  int32 subscriptionId = 2;
+}
+
+message TbSubscriptionKetStateProto {
+  string key = 1;
+  int64 ts = 2;
+}
+
+message TbSubscriptionUpdateValueListProto {
+  string key = 1;
+  repeated int64 ts = 2;
+  repeated string value = 3;
+}
+
+/**
+ * TB Core to TB Core messages
+ */
+
+message DeviceStateServiceMsgProto {
+  int64 tenantIdMSB = 1;
+  int64 tenantIdLSB = 2;
+  int64 deviceIdMSB = 3;
+  int64 deviceIdLSB = 4;
+  bool added = 5;
+  bool updated = 6;
+  bool deleted = 7;
+}
+
+message SubscriptionMgrMsgProto {
+  TbTimeSeriesSubscriptionProto telemetrySub = 1;
+  TbAttributeSubscriptionProto attributeSub = 2;
+  TbSubscriptionCloseProto subClose = 3;
+  TbTimeSeriesUpdateProto tsUpdate = 4;
+  TbAttributeUpdateProto attrUpdate = 5;
+  TbAttributeDeleteProto attrDelete = 6;
+  TbAlarmSubscriptionProto alarmSub = 7;
+  TbAlarmUpdateProto alarmUpdate = 8;
+  TbAlarmDeleteProto alarmDelete = 9;
+}
+
+message LocalSubscriptionServiceMsgProto {
+  TbSubscriptionUpdateProto subUpdate = 1;
+  TbAlarmSubscriptionUpdateProto alarmSubUpdate = 2;
+}
+
+message FromDeviceRPCResponseProto {
+  int64 requestIdMSB = 1;
+  int64 requestIdLSB = 2;
+  string response = 3;
+  int32 error = 4;
+}
+
+/**
+ * Main messages;
+ */
+
+/* Request from Transport Service to ThingsBoard Core Service */
+// 传输层到 核心业务层 的消息统一结构。 用于不同层之间的调用
+message TransportApiRequestMsg {
+  ValidateDeviceTokenRequestMsg validateTokenRequestMsg = 1;
+  ValidateDeviceX509CertRequestMsg validateX509CertRequestMsg = 2;
+  GetOrCreateDeviceFromGatewayRequestMsg getOrCreateDeviceRequestMsg = 3;
+  GetEntityProfileRequestMsg entityProfileRequestMsg = 4;
+  ValidateBasicMqttCredRequestMsg validateBasicMqttCredRequestMsg = 6;
+  ProvisionDeviceRequestMsg provisionDeviceRequestMsg = 7;
+}
+
+/* Response from ThingsBoard Core Service to Transport Service */
+// 核心业务层 ----> 传输层 返回数据的统一数据结构
+message TransportApiResponseMsg {
+  ValidateDeviceCredentialsResponseMsg validateCredResponseMsg = 1;
+  GetOrCreateDeviceFromGatewayResponseMsg getOrCreateDeviceResponseMsg = 2;
+  GetEntityProfileResponseMsg entityProfileResponseMsg = 3;
+  ProvisionDeviceResponseMsg provisionDeviceResponseMsg = 4;
+}
+
+/* Messages that are handled by ThingsBoard Core Service */
+message ToCoreMsg {
+  TransportToDeviceActorMsg toDeviceActorMsg = 1;
+  DeviceStateServiceMsgProto deviceStateServiceMsg = 2;
+  SubscriptionMgrMsgProto toSubscriptionMgrMsg = 3;
+  bytes toDeviceActorNotificationMsg = 4;
+}
+
+/* High priority messages with low latency are handled by ThingsBoard Core Service separately */
+message ToCoreNotificationMsg {
+  LocalSubscriptionServiceMsgProto toLocalSubscriptionServiceMsg = 1;
+  FromDeviceRPCResponseProto fromDeviceRpcResponse = 2;
+  bytes componentLifecycleMsg = 3;
+}
+
+/* Messages that are handled by ThingsBoard RuleEngine Service */
+message ToRuleEngineMsg {
+  int64 tenantIdMSB = 1;
+  int64 tenantIdLSB = 2;
+  bytes tbMsg = 3;
+  repeated string relationTypes = 4;
+  string failureMessage = 5;
+}
+
+message ToRuleEngineNotificationMsg {
+  bytes componentLifecycleMsg = 1;
+  FromDeviceRPCResponseProto fromDeviceRpcResponse = 2;
+}
+
+/* Messages that are handled by ThingsBoard Transport Service */
+/**
+ * 传输层消息：从这里可以看出传输层消息有几种类型：
+ * 1、session过期通知消息
+ * 2、获取属性响应消息
+ * 3、属性更新消息
+ * 4、设备RPC请求消息
+ * 5、服务端RPC相应消息
+ * 6、实体更新消息
+ * 7、实体删除消息
+ * 8、新增设备响应消息
+ */
+message ToTransportMsg {
+  int64 sessionIdMSB = 1;
+  int64 sessionIdLSB = 2;
+  SessionCloseNotificationProto sessionCloseNotification = 3;
+  GetAttributeResponseMsg getAttributesResponse = 4;
+  AttributeUpdateNotificationMsg attributeUpdateNotification = 5;
+  ToDeviceRpcRequestMsg toDeviceRequest = 6;
+  ToServerRpcResponseMsg toServerResponse = 7;
+  /* For Tenant, TenantProfile and DeviceProfile */
+  EntityUpdateMsg entityUpdateMsg = 8;
+  EntityDeleteMsg entityDeleteMsg = 9;
+  ProvisionDeviceResponseMsg provisionResponse = 10;
+}
+
+message UsageStatsKVProto{
+  string key = 1;
+  int64 value = 2;
+}
+
+message ToUsageStatsServiceMsg {
+  int64 tenantIdMSB = 1;
+  int64 tenantIdLSB = 2;
+  int64 entityIdMSB = 3;
+  int64 entityIdLSB = 4;
+  repeated UsageStatsKVProto values = 5;
+}

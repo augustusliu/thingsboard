@@ -1,0 +1,6 @@
+
+<!--The content below is only a placeholder and can be replaced.-->
+
+<!-- 当前页面理论上是一个跳转页面，或者是一个菜单页面。这里将导航去掉，做了一个动态加载页面 -->
+<!-- 只有，所有其他子组件的页面渲染都将渲染到这个页面，所有这里是一个内容承载页面 -->
+<router-outlet (activate)="onActivateComponent($event)"></router-outlet>
